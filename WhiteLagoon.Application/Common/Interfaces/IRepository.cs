@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WhiteLagoon.Domain.Entities;
 
-namespace WhiteLagoon.Application.Interfaces
+namespace WhiteLagoon.Application.Common.Interfaces
 {
     public interface IRepository<T> where T : class
     {

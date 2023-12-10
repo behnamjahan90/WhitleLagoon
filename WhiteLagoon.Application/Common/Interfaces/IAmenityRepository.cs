@@ -5,10 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using WhiteLagoon.Domain.Entities;
 
-namespace WhiteLagoon.Application.Interfaces
+namespace WhiteLagoon.Application.Common.Interfaces
 {
-    public interface IVillaNumberRepository : IRepository<VillaNumber>
+    public interface IAmenityRepository : IRepository<Amenity>
     {
-        void Update(VillaNumber entity);
+        void Update(Amenity entity);
     }
 }

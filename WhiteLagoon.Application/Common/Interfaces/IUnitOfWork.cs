@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WhiteLagoon.Application.Interfaces
+namespace WhiteLagoon.Application.Common.Interfaces
 {
     public interface IUnitOfWork
     {
