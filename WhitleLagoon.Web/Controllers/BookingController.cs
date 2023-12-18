@@ -291,8 +291,6 @@ namespace WhitleLagoon.Web.Controllers
 
                 return File(stream, "application/pdf", "BookingDetails.pdf");
             }
-            
-
         }
 
         [HttpPost]
