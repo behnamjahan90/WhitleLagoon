@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WhiteLagoon.Application.Common.Interfaces;
+using WhiteLagoon.Application.Services.Implementation;
+using WhiteLagoon.Application.Services.Interface;
 using WhiteLagoon.Domain.Entities;
 using WhiteLagoon.Infrastructure.Data;
 using WhitleLagoon.Web.ViewModels;
@@ -11,16 +13,19 @@ namespace WhitleLagoon.Web.Controllers
 {
     public class VillaNumberController : Controller
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IVillaNumberService _villaNumberService;
+        private readonly IVillaService _villaService;
 
-        public VillaNumberController(IUnitOfWork unitOfWork)
+        public VillaNumberController(IVillaNumberService villaNumberService, IVillaService villaService)
         {
-            _unitOfWork = unitOfWork;
+            _villaNumberService = villaNumberService;
+            _villaService = villaService;
+
         }
         public IActionResult Index()
         {
             //If we have another navigation property inside the villa we use .ThenInclude(u=>u.xxx)...
-            var villaNumbers = _unitOfWork.VillaNumber.GetAll(includeProperties:"Villa");
+            var villaNumbers = _villaNumberService.GetAllVillaNumbers("Villa");
             return View(villaNumbers);
         }
 
@@ -28,7 +33,7 @@ namespace WhitleLagoon.Web.Controllers
         {
             VillaNumberVM villaNumberVM = new() 
             {
-                VillaList = _unitOfWork.Villa.GetAll().Select(u => new SelectListItem
+                VillaList = _villaService.GetAllVillas().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
@@ -44,7 +49,7 @@ namespace WhitleLagoon.Web.Controllers
         public IActionResult Create(VillaNumberVM obj) 
         {
             //more efficient way to check an item exists in database
-            bool roomNumberExists = _unitOfWork.VillaNumber.Any(u => u.Villa_Number == obj.VillaNumber.Villa_Number);
+            bool roomNumberExists = _villaNumberService.CheckVillaNumberExists(obj.VillaNumber.Villa_Number);
 
             if (!ModelState.IsValid || roomNumberExists)
             {
@@ -57,16 +62,14 @@ namespace WhitleLagoon.Web.Controllers
                 }
 
                 TempData["error"] = errorMsg;
-                obj.VillaList = _unitOfWork.Villa.GetAll().Select(u => new SelectListItem
+                obj.VillaList = _villaService.GetAllVillas().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
                 });
                 return View(obj);
             }
-
-            _unitOfWork.VillaNumber.Add(obj.VillaNumber);
-            _unitOfWork.Save();
+            _villaNumberService.CreateVillaNumber(obj.VillaNumber);
             TempData["success"] = "The villa number has been created successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -75,12 +78,12 @@ namespace WhitleLagoon.Web.Controllers
         {
             VillaNumberVM villaNumberVM = new()
             {
-                VillaList = _unitOfWork.Villa.GetAll().Select(u => new SelectListItem
+                VillaList = _villaService.GetAllVillas().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
                 }),
-                VillaNumber = _unitOfWork.VillaNumber.Get(u=> u.Villa_Number == villaNumberId)
+                VillaNumber = _villaNumberService.GetVillaNumberById(villaNumberId)
             };
             //Villa? villa = _db.Villas.Find(villaId);
             if (villaNumberVM.VillaNumber == null) return RedirectToAction("Error","Home");
@@ -94,7 +97,7 @@ namespace WhitleLagoon.Web.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["error"] = "The Villa number could not be created";
-                villaNumberVM.VillaList = _unitOfWork.Villa.GetAll().Select(u => new SelectListItem
+                villaNumberVM.VillaList = _villaService.GetAllVillas().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
@@ -102,8 +105,7 @@ namespace WhitleLagoon.Web.Controllers
                 return View(villaNumberVM);
             }
 
-            _unitOfWork.VillaNumber.Update(villaNumberVM.VillaNumber);
-            _unitOfWork.Save();
+            _villaNumberService.UpdateVillaNumber(villaNumberVM.VillaNumber);
             TempData["success"] = "The villa number has been updated successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -112,12 +114,12 @@ namespace WhitleLagoon.Web.Controllers
         {
             VillaNumberVM villaNumberVM = new()
             {
-                VillaList = _unitOfWork.Villa.GetAll().Select(u => new SelectListItem
+                VillaList = _villaService.GetAllVillas().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
                 }),
-                VillaNumber = _unitOfWork.VillaNumber.Get(u => u.Villa_Number == villaNumberId)
+                VillaNumber = _villaNumberService.GetVillaNumberById(villaNumberId)
             };
             //Villa? villa = _db.Villas.Find(villaId);
             if (villaNumberVM.VillaNumber == null) return RedirectToAction("Error", "Home");
@@ -128,11 +130,10 @@ namespace WhitleLagoon.Web.Controllers
         [HttpPost]
         public IActionResult Delete(VillaNumberVM villaNumberVM)
         {
-            VillaNumber? obj = _unitOfWork.VillaNumber.Get(x => x.Villa_Number == villaNumberVM.VillaNumber.Villa_Number);
+            VillaNumber? obj = _villaNumberService.GetVillaNumberById(villaNumberVM.VillaNumber.Villa_Number);
             if (obj is not null)
             {
-                _unitOfWork.VillaNumber.Remove(obj);
-                _unitOfWork.Save();
+                _villaNumberService.DeleteVillaNumber(obj.Villa_Number);
                 TempData["success"] = "The villa number has been deleted successfully.";
                 return RedirectToAction(nameof(Index));
             }

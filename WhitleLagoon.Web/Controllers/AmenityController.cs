@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WhiteLagoon.Application.Common.Interfaces;
 using WhiteLagoon.Application.Common.Utility;
+using WhiteLagoon.Application.Services.Implementation;
+using WhiteLagoon.Application.Services.Interface;
 using WhiteLagoon.Domain.Entities;
 using WhiteLagoon.Infrastructure.Data;
 using WhitleLagoon.Web.ViewModels;
@@ -14,16 +16,19 @@ namespace WhitleLagoon.Web.Controllers
     [Authorize(Roles =SD.Role_Admin)]
     public class AmenityController : Controller
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IAmenityService _amenityService;
+        private readonly IVillaService _villaService;
 
-        public AmenityController(IUnitOfWork unitOfWork)
+        public AmenityController(IAmenityService amenityService, IVillaService villaService)
         {
-            _unitOfWork = unitOfWork;
+            _amenityService = amenityService;
+            _villaService = villaService;
+
         }
         public IActionResult Index()
         {
             //If we have another navigation property inside the villa we use .ThenInclude(u=>u.xxx)...
-            var amenities = _unitOfWork.Amenity.GetAll(includeProperties:"Villa");
+            var amenities = _amenityService.GetAllAmenities(includeproperties:"Villa");
             return View(amenities);
         }
 
@@ -31,7 +36,7 @@ namespace WhitleLagoon.Web.Controllers
         {
             AmenityVM amenityVM = new() 
             {
-                VillaList = _unitOfWork.Villa.GetAll().Select(u => new SelectListItem
+                VillaList = _villaService.GetAllVillas().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
@@ -50,16 +55,14 @@ namespace WhitleLagoon.Web.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["error"] = "The Amenity could not be created";
-                obj.VillaList = _unitOfWork.Villa.GetAll().Select(u => new SelectListItem
+                obj.VillaList = _villaService.GetAllVillas().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
                 });
                 return View(obj);
             }
-
-            _unitOfWork.Amenity.Add(obj.Amenity);
-            _unitOfWork.Save();
+            _amenityService.CreateAmenity(obj.Amenity);
             TempData["success"] = "The amenity has been created successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -68,12 +71,12 @@ namespace WhitleLagoon.Web.Controllers
         {
             AmenityVM amenityVM = new()
             {
-                VillaList = _unitOfWork.Villa.GetAll().Select(u => new SelectListItem
+                VillaList = _villaService.GetAllVillas().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
                 }),
-                Amenity = _unitOfWork.Amenity.Get(u=> u.Id == amenityId)
+                Amenity = _amenityService.GetAmenityById(amenityId)
             };
             //Villa? villa = _db.Villas.Find(villaId);
             if (amenityVM.Amenity == null) return RedirectToAction("Error","Home");
@@ -87,7 +90,7 @@ namespace WhitleLagoon.Web.Controllers
             if (!ModelState.IsValid)
             {
                 TempData["error"] = "The amenity could not be created";
-                amenityVM.VillaList = _unitOfWork.Villa.GetAll().Select(u => new SelectListItem
+                amenityVM.VillaList = _villaService.GetAllVillas().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
@@ -95,8 +98,7 @@ namespace WhitleLagoon.Web.Controllers
                 return View(amenityVM);
             }
 
-            _unitOfWork.Amenity.Update(amenityVM.Amenity);
-            _unitOfWork.Save();
+            _amenityService.UpdateAmenity(amenityVM.Amenity);
             TempData["success"] = "The amenity has been updated successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -105,12 +107,12 @@ namespace WhitleLagoon.Web.Controllers
         {
             AmenityVM amenityVM = new()
             {
-                VillaList = _unitOfWork.Villa.GetAll().Select(u => new SelectListItem
+                VillaList = _villaService.GetAllVillas().Select(u => new SelectListItem
                 {
                     Text = u.Name,
                     Value = u.Id.ToString()
                 }),
-                Amenity = _unitOfWork.Amenity.Get(u => u.Id == amenityId)
+                Amenity = _amenityService.GetAmenityById(amenityId)
             };
             //Villa? villa = _db.Villas.Find(villaId);
             if (amenityVM.Amenity == null) return RedirectToAction("Error", "Home");
@@ -121,11 +123,8 @@ namespace WhitleLagoon.Web.Controllers
         [HttpPost]
         public IActionResult Delete(AmenityVM amenityVM)
         {
-            Amenity? obj = _unitOfWork.Amenity.Get(x => x.Id == amenityVM.Amenity.Id);
-            if (obj is not null)
+            if (_amenityService.DeleteAmenity(amenityVM.Amenity.Id))
             {
-                _unitOfWork.Amenity.Remove(obj);
-                _unitOfWork.Save();
                 TempData["success"] = "The amenity has been deleted successfully.";
                 return RedirectToAction(nameof(Index));
             }

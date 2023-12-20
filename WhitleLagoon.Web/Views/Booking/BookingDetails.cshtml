@@ -50,7 +50,6 @@
                 <input asp-for="Id" hidden />
                 <input asp-for="VillaId" hidden />
                 <input asp-for="UserId" hidden />
-                <input asp-for="VillaNumber" hidden />
                 <input asp-for="CheckInDate" hidden />
                 <input asp-for="CheckOutDate" hidden />
                 <input asp-for="Nights" hidden />
@@ -120,11 +119,11 @@
                                     <option value="@item.Villa_Number">@item.Villa_Number</option>
                                 }
                             </select>
-
                         </div>
                     }
                     else
                     {
+                        <input asp-for="VillaNumber" hidden />
                         @if (Model.Status == SD.StatusCheckedIn || Model.Status == SD.StatusCompleted)
                         {
                             <div class="form-group pt-2 col-6">
